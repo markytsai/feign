@@ -26,6 +26,7 @@
   <artifactId>feign-hystrix</artifactId>
   <name>Feign Hystrix</name>
   <description>Feign Hystrix</description>
+  <version>1.0.0-SNAPSHOT</version>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
@@ -86,6 +87,17 @@
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.16</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
   </dependencies>
 </project>

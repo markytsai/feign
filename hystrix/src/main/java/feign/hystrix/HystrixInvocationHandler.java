@@ -15,19 +15,20 @@ package feign.hystrix;
 
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommand.Setter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+
+import java.lang.reflect.*;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
 import feign.InvocationHandlerFactory.MethodHandler;
 import feign.Target;
 import feign.Util;
+import lombok.SneakyThrows;
 import rx.Completable;
 import rx.Observable;
 import rx.Single;
@@ -114,6 +115,7 @@ final class HystrixInvocationHandler implements InvocationHandler {
             }
           }
 
+          @SneakyThrows
           @Override
           protected Object getFallback() {
             if (fallbackFactory == null) {
@@ -121,7 +123,12 @@ final class HystrixInvocationHandler implements InvocationHandler {
             }
             try {
               Object fallback = fallbackFactory.create(getExecutionException());
-              Object result = fallbackMethodMap.get(method).invoke(fallback, args);
+              Object result = null;
+              if (method.isAnnotationPresent(Mock.class)) {
+                Object fallbackProxy = new HystrixFallbackInvocationHandler(fallback).proxy();
+                fallback = fallbackProxy;
+              }
+              result = fallbackMethodMap.get(method).invoke(fallback, args);
               if (isReturnsHystrixCommand(method)) {
                 return ((HystrixCommand) result).execute();
               } else if (isReturnsObservable(method)) {
