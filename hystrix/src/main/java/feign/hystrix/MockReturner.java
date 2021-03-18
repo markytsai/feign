@@ -20,25 +20,22 @@ import static feign.hystrix.ReflectUtil.*;
 
 public class MockReturner {
 
-  public Object getGenericReturnType(Method method) throws Exception {
-
+  public Object mockResponse(Method method) throws Exception {
     Type returnType = method.getGenericReturnType();
-    Object obj = null;
+    Object response = null;
     if (returnType instanceof ParameterizedType) {
       Type rawType = ((ParameterizedType) returnType).getRawType();
       if (rawType instanceof Class) {
-        obj = ((Class) rawType).newInstance();
+        response = ((Class) rawType).newInstance();
         Type argument = ((ParameterizedType) returnType).getActualTypeArguments()[0];
-        recursive(obj, returnType, argument);
+        recursive(response, returnType, argument);
       }
     }
     if (returnType instanceof Class) {
-      obj = ((Class<?>) returnType).newInstance();
-      recursive(obj, returnType, null);
+      response = ((Class<?>) returnType).newInstance();
+      recursive(response, returnType, null);
     }
-
-    return obj;
-
+    return response;
   }
 
   public void recursive(Object target, Type targetType, Type argument) throws Exception {
@@ -164,8 +161,10 @@ public class MockReturner {
               mockList.add(listObj);
               recursive(listObj, actualTypeArgument, null);
             }
+            declaredField.set(target, mockList);
+            continue;
           }
-          declaredField.set(target, mockList);
+
           // end
 
           if (rawType instanceof Class) {
