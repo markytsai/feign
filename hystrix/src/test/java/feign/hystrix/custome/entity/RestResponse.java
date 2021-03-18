@@ -1,6 +1,7 @@
 package feign.hystrix.custome.entity;
 
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * @description:
@@ -9,6 +10,7 @@ import lombok.Getter;
  * @date: 2021/3/16 20:16
  */
 @Getter
+@ToString
 public class RestResponse<T> {
   private int code;
   private String msg;
@@ -16,6 +18,12 @@ public class RestResponse<T> {
 
   public RestResponse() {
     this.code = 200;
+  }
+
+  public RestResponse(T data) {
+    this.code = 200;
+    this.msg = "success";
+    this.data = data;
   }
 
   public RestResponse(int code, T data) {

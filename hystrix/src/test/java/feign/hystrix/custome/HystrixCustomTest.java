@@ -5,6 +5,7 @@ import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.hystrix.HystrixFeign;
 import feign.hystrix.custome.entity.Contributor;
+import feign.hystrix.custome.entity.RestResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.Rule;
@@ -42,10 +43,10 @@ public class HystrixCustomTest {
 
     ContributorApi fallback = new ContributorApi() {
       @Override
-      public Contributor singleContributor(String owner, String repo) {
+      public RestResponse<Contributor> singleContributor(String owner, String repo) {
         Contributor fallbackContributor = new Contributor();
         fallbackContributor.setName("fallbackWorker");
-        return fallbackContributor;
+        return new RestResponse<>(fallbackContributor);
       }
 
       @Override
@@ -58,12 +59,8 @@ public class HystrixCustomTest {
 
     final ContributorApi api =
         target(ContributorApi.class, "http://localhost:" + server.getPort(), fallback);
-    Contributor c = api.singleContributor("Netflix", "feign");
-    Contributor c1 = api.singleContributor("Netflix", "feign");
-    Contributor c2 = api.singleContributor();
+    RestResponse<?> c = api.singleContributor("Netflix", "feign");
     System.out.println(c);
-    System.out.println(c1);
-    System.out.println(c2);
   }
 
   protected <E> E target(Class<E> api, String url, E fallback) {

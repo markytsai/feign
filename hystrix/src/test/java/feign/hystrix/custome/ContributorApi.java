@@ -4,6 +4,8 @@ import feign.Param;
 import feign.RequestLine;
 import feign.hystrix.Mock;
 import feign.hystrix.custome.entity.Contributor;
+import feign.hystrix.custome.entity.RestResponse;
+import feign.hystrix.custome.entity.UserAppId;
 
 /**
  * @description:
@@ -13,9 +15,9 @@ import feign.hystrix.custome.entity.Contributor;
  */
 interface ContributorApi {
 
-  @Mock
+  @Mock(type = UserAppId.class)
   @RequestLine("GET /repos/{owner}/{repo}/contributors")
-  Contributor singleContributor(@Param("owner") String owner, @Param("repo") String repo);
+  RestResponse<?> singleContributor(@Param("owner") String owner, @Param("repo") String repo);
 
   @RequestLine("GET /all")
   Contributor singleContributor();

@@ -32,7 +32,11 @@ public class ReflectUtil {
     Class type = field.getType();
     boolean isPrimitive = false;
     if (type == int.class) {
-      field.set(ret, 999);
+      if (field.getName().equals("code")) {
+        field.set(ret, 200);
+      } else {
+        field.set(ret, 999);
+      }
       isPrimitive = true;
     }
     if (type == double.class) {
@@ -65,7 +69,7 @@ public class ReflectUtil {
     }
 
     if (type == Integer.class) {
-      field.set(ret, 9);
+      field.set(ret, 200);
       isPrimitive = true;
     }
     if (type == Double.class) {
@@ -105,7 +109,11 @@ public class ReflectUtil {
     }
 
     if (type == String.class) {
-      field.set(ret, "mockString");
+      if (field.getName().equals("msg")) {
+        field.set(ret, "success");
+      } else {
+        field.set(ret, "mockString");
+      }
       isPrimitive = true;
 
     }

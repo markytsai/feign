@@ -15,7 +15,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface Mock {
 
-  // boolean enable() default false;
-  //
-  // Class<?> type() default Object.class;
+  Class<?> type() default void.class;
+
 }
