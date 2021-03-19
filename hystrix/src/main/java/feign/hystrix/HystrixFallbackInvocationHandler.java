@@ -3,6 +3,7 @@ package feign.hystrix;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Map;
 
 /**
  * @description:
@@ -12,27 +13,22 @@ import java.lang.reflect.Proxy;
  */
 public class HystrixFallbackInvocationHandler implements InvocationHandler {
 
-  private Object api;
   private Class<?> type;
-  private static MockReturner mockReturner = new MockReturner();
-
-  public static final String MOCK_STRING = "mockWorker";
-
-  public HystrixFallbackInvocationHandler() {}
+  private Map<Method, Boolean> mockMap;
+  private static Mocker mocker = new Mocker();
 
   public <T> T proxy() {
     return (T) Proxy.newProxyInstance(type.getClassLoader(),
         type.getInterfaces(), this);
   }
 
-  public HystrixFallbackInvocationHandler(Object api) {
-    this.api = api;
+  public HystrixFallbackInvocationHandler(Object api, Map<Method, Boolean> mockMap) {
+    this.mockMap = mockMap;
     this.type = api.getClass();
   }
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    // return mockObject(method);
-    return mockReturner.mockResponse(method);
+    return mockMap.get(method) ? mocker.mockResponse(method) : null;
   }
 }

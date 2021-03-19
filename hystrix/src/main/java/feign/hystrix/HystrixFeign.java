@@ -59,8 +59,9 @@ public final class HystrixFeign {
      * @see #target(Class, String, Object)
      */
     public <T> T target(Target<T> target, T fallback) {
-      return build(fallback != null ? new FallbackFactory.Default<T>(fallback) : null)
-          .newInstance(target);
+      return build(
+          fallback != null ? new FallbackFactory.EnhancedFallbackFactory<T>(fallback) : null)
+              .newInstance(target);
     }
 
     /**
@@ -144,7 +145,9 @@ public final class HystrixFeign {
         public InvocationHandler create(Target target,
                                         Map<Method, MethodHandler> dispatch) {
           return new HystrixInvocationHandler(target, dispatch, setterFactory,
-              nullableFallbackFactory);
+              new FallbackFactory.EnhancedFallbackFactory(
+                  nullableFallbackFactory.create(new Throwable(
+                      "ignore this exception, this is for mock and you won't see it in prod environment."))));
         }
       });
       super.contract(new HystrixDelegatingContract(contract));

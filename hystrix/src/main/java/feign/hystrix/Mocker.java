@@ -22,9 +22,9 @@ import static feign.hystrix.ReflectUtil.*;
  * @date: 2021/3/16 20:11
  */
 
-public class MockReturner {
+public class Mocker {
 
-  Logger log = LoggerFactory.getLogger(MockReturner.class);
+  Logger log = LoggerFactory.getLogger(Mocker.class);
 
   Object mockResponse(Method method) throws Exception {
     log.info("mock method [{}]",
