@@ -45,8 +45,8 @@ class EnhancedFallbackFactory<T> extends FallbackFactory.Default<T> {
       return super.get();
     }
     T t = delegateFallbackFactory.create(cause);
-//    delegateFallbackFactory = new EnhancedFallbackFactory<>(t);
-    Object fallbackProxy = new HystrixFallbackInvocationHandler(new EnhancedFallbackFactory<>(t).get(),
+    Object fallbackProxy =
+        new HystrixFallbackInvocationHandler(new EnhancedFallbackFactory<>(t).get(),
             new EnhancedFallbackFactory<>(t).getMockMap()).proxy();
     return (T) fallbackProxy;
   }

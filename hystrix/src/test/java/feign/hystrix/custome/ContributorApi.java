@@ -15,7 +15,7 @@ import feign.hystrix.custome.entity.UserAppId;
  */
 interface ContributorApi {
 
-//  @Mock(type = UserAppId.class)
+  // @Mock(type = UserAppId.class)
   @RequestLine("GET /repos/{owner}/{repo}/contributors")
   RestResponse<?> singleContributor(@Param("owner") String owner, @Param("repo") String repo);
 

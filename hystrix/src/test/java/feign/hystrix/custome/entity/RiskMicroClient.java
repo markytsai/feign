@@ -11,7 +11,7 @@ import feign.hystrix.Mock;
  */
 public interface RiskMicroClient {
 
-//  @Mock
+  // @Mock
   @RequestLine("GET /test")
   RestResponse<RestPage<ComplaintHandlerMicroResponse>> queryComplaintHandlerList();
 
