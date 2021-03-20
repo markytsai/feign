@@ -144,6 +144,7 @@ public final class HystrixFeign {
         public InvocationHandler create(Target target,
                                         Map<Method, MethodHandler> dispatch) {
           return new HystrixInvocationHandler(target, dispatch, setterFactory,
+              nullableFallbackFactory == null ? null :
               new EnhancedFallbackFactory(
                   nullableFallbackFactory));
         }
