@@ -3,9 +3,9 @@
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -14,10 +14,8 @@
 package feign.hystrix;
 
 import feign.FeignException;
-import java.lang.invoke.MethodHandle;
+
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,40 +52,32 @@ public interface FallbackFactory<T> {
    *
    * @param cause corresponds to {@link com.netflix.hystrix.AbstractCommand#getExecutionException()}
    *        often, but not always an instance of {@link FeignException}.
-   * @param method
    */
   T create(Throwable cause);
 
-  final class EnhancedFallbackFactory<T> extends Default<T> {
-    private Map<Method, Boolean> mockMap = new HashMap<>();
+  default T get() {
+    return null;
+  }
 
-    public EnhancedFallbackFactory(T constant) {
-      super(constant);
-      Class<?>[] interfaces = constant.getClass().getInterfaces();
-      Class<?> interfaceOnlyOne = interfaces[0];
-      Method[] declaredMethods = interfaceOnlyOne.getDeclaredMethods();
-      for (Method declaredMethod : declaredMethods) {
-        if (declaredMethod.isAnnotationPresent(Mock.class)) {
-          mockMap.put(declaredMethod, Boolean.TRUE);
-        } else {
-          mockMap.put(declaredMethod, Boolean.FALSE);
-        }
-      }
-    }
-
-    @Override
-    public T create(Throwable cause) {
-      Object fallbackProxy = new HystrixFallbackInvocationHandler(super.constant, mockMap).proxy();
-      return (T) fallbackProxy;
-    }
+  default Map<Method, Boolean> getMockMap() {
+    return null;
   }
 
 
   /** Returns a constant fallback after logging the cause to FINE level. */
   class Default<T> implements FallbackFactory<T> {
     // jul to not add a dependency
-    final Logger logger;
-    final T constant;
+    private Logger logger;
+    private T constant;
+
+    @Override
+    public T get() {
+      return constant;
+    }
+
+    public Default() {
+
+    }
 
     public Default(T constant) {
       this(constant, Logger.getLogger(Default.class.getName()));

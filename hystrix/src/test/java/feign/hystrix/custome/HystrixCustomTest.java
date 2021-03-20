@@ -14,6 +14,8 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @description:
@@ -66,7 +68,10 @@ public class HystrixCustomTest {
     RiskMicroClient riskFallback = new RiskMicroClient() {
       @Override
       public RestResponse<RestPage<ComplaintHandlerMicroResponse>> queryComplaintHandlerList() {
-        return new RestResponse<>();
+        List<ComplaintHandlerMicroResponse> responses =
+            Arrays.asList(new ComplaintHandlerMicroResponse());
+        RestPage restPage = new RestPage(responses);
+        return new RestResponse<>("this is fallback", restPage);
       }
     };
     RiskMicroClient client =

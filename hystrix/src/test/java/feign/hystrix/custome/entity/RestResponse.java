@@ -26,6 +26,11 @@ public class RestResponse<T> {
     this.data = data;
   }
 
+  public RestResponse(String msg, T data) {
+    this.msg = msg;
+    this.data = data;
+  }
+
   public RestResponse(int code, T data) {
     this.code = code;
     this.data = data;
