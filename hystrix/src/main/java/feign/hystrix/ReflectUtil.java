@@ -1,10 +1,10 @@
 package feign.hystrix;
 
-import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * @description:
@@ -14,25 +14,14 @@ import java.util.Map;
  */
 public class ReflectUtil {
 
-  private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS =
-      new ImmutableMap.Builder<Class<?>, Class<?>>()
-          .put(boolean.class, Boolean.class)
-          .put(byte.class, Byte.class)
-          .put(char.class, Character.class)
-          .put(double.class, Double.class)
-          .put(float.class, Float.class)
-          .put(int.class, Integer.class)
-          .put(long.class, Long.class)
-          .put(short.class, Short.class)
-          .put(void.class, Void.class)
-          .build();
+  private final static String CODE = "code";
+  private final static String MSG = "msg";
 
-  @SuppressWarnings("unchecked")
   public static boolean setField(Field field, Object ret) throws Exception {
     Class type = field.getType();
     boolean isPrimitive = false;
     if (type == int.class) {
-      if (field.getName().equals("code")) {
+      if (CODE.equals(field.getName())) {
         field.set(ret, 200);
       } else {
         field.set(ret, 999);
@@ -69,7 +58,7 @@ public class ReflectUtil {
     }
 
     if (type == Integer.class) {
-      field.set(ret, 200);
+      field.set(ret, 9);
       isPrimitive = true;
     }
     if (type == Double.class) {
@@ -109,7 +98,7 @@ public class ReflectUtil {
     }
 
     if (type == String.class) {
-      if (field.getName().equals("msg")) {
+      if (MSG.equals(field.getName())) {
         field.set(ret, "success");
       } else {
         field.set(ret, "mockString");
@@ -118,8 +107,18 @@ public class ReflectUtil {
 
     }
 
+    if (type == Date.class) {
+      field.set(ret, new Date());
+      isPrimitive = true;
+    }
+
     if (type == LocalDate.class) {
       field.set(ret, LocalDate.now());
+      isPrimitive = true;
+    }
+
+    if (type == LocalDateTime.class) {
+      field.set(ret, LocalDateTime.now());
       isPrimitive = true;
     }
 
@@ -155,38 +154,17 @@ public class ReflectUtil {
     if (type == String.class) {
       return "mockString";
     }
+    if (type == Date.class) {
+      return new Date();
+    }
+    if (type == LocalDate.class) {
+      return LocalDate.now();
+    }
+
+    if (type == LocalDateTime.class) {
+      return LocalDateTime.now();
+    }
+
     return null;
   }
-
-  public static Object genObj(Type type) {
-    if (type == String.class) {
-      return "mockString";
-    }
-    if (type == Integer.class) {
-      return 999;
-    }
-    if (type == Long.class) {
-      return 999L;
-    }
-    return null;
-  }
-
-
-  public static boolean isPrimitive(Type type) {
-    if (type instanceof Class) {
-      if (((Class) type).isPrimitive()) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public static boolean isPrimitiveWrapper(Class<?> type) {
-    if (PRIMITIVES_TO_WRAPPERS.values().contains(type)) {
-      return true;
-    }
-    return false;
-  }
-
-
 }

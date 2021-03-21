@@ -26,9 +26,60 @@ public class Mocker {
 
   Logger log = LoggerFactory.getLogger(Mocker.class);
 
-  Object mockResponse(Method method) throws Exception {
-    log.info("mock method [{}]",
-        method.getDeclaringClass().getSimpleName() + "#" + method.getName());
+  public Object processGenericList(Object target,
+                                   Field declaredField,
+                                   Type actualTypeArgument,
+                                   List<Object> mockList,
+                                   Type argument)
+      throws Exception {
+    Type fieldGenericType = declaredField.getGenericType();
+    Object listObj;
+
+    // List<Integer> List<String>
+    listObj = generateWrapperUsingPrimitive(actualTypeArgument);
+    if (listObj != null) {
+      mockList.add(listObj);
+      declaredField.set(target, mockList);
+      return listObj;
+    }
+
+    // List<List<String>>
+    if (actualTypeArgument instanceof ParameterizedType) {
+      Type actualTypeArgument1 =
+          ((ParameterizedTypeImpl) fieldGenericType).getActualTypeArguments()[0];
+      listObj = new ArrayList<>();
+      recursive(listObj, fieldGenericType, actualTypeArgument1);
+      mockList.add(listObj);
+      declaredField.set(target, mockList);
+    }
+
+    // List<T>
+    if (actualTypeArgument instanceof TypeVariable) {
+      if (argument instanceof Class) {
+        listObj = generateWrapperUsingPrimitive(argument);
+        if (listObj == null) {
+          listObj = ((Class<?>) argument).newInstance();
+          mockList.add(listObj);
+          recursive(listObj, argument, null);
+
+        }
+        mockList.add(listObj);
+        declaredField.set(target, mockList);
+        return listObj;
+      }
+    }
+
+    if (actualTypeArgument instanceof Class) {
+      listObj = ((Class) actualTypeArgument).newInstance();
+      mockList.add(listObj);
+      recursive(listObj, actualTypeArgument, null);
+    }
+    declaredField.set(target, mockList);
+    return listObj;
+  }
+
+  public Object mockResponse(Method method) throws Exception {
+    log.info("mock method [{}]", method.getDeclaringClass().getName() + "." + method.getName());
     try {
       Type returnType = method.getGenericReturnType();
       Object response = null;
@@ -53,13 +104,12 @@ public class Mocker {
       }
       return response;
     } catch (Exception e) {
-      // log.logMethod("Exception: ", e);
+      log.info("Exception: ", e);
       throw e;
     }
   }
 
   public void recursive(Object target, Type targetType, Type argument) throws Exception {
-
     Field[] declaredFields = target.getClass().getDeclaredFields();
     for (Field declaredField : declaredFields) {
       if (Modifier.isFinal(declaredField.getModifiers())) {
@@ -88,43 +138,13 @@ public class Mocker {
         if (fieldRawType == List.class) {
           Type actualTypeArgument =
               ((ParameterizedType) fieldGenericType).getActualTypeArguments()[0];
-          Object listObj;
-
-          // List<Integer> List<String>
-          listObj = genObj(actualTypeArgument);
-          if (listObj != null) {
-            mockList.add(listObj);
-            declaredField.set(target, mockList);
-            continue;
-          }
-
-          // List<List<String>>
-          if (actualTypeArgument instanceof ParameterizedType) {
-            Type actualTypeArgument1 =
-                ((ParameterizedTypeImpl) fieldGenericType).getActualTypeArguments()[0];
-            listObj = new ArrayList<>();
-            recursive(listObj, fieldGenericType, actualTypeArgument1);
-            mockList.add(listObj);
-            declaredField.set(target, mockList);
-          }
-
-          // List<T>
-          if (actualTypeArgument instanceof TypeVariable) {
-            if (argument instanceof Class) {
-              listObj = generateWrapperUsingPrimitive(argument);
-              if (listObj == null) {
-                listObj = ((Class<?>) argument).newInstance();
-                mockList.add(listObj);
-                recursive(listObj, argument, null);
-
-              }
-              mockList.add(listObj);
-              declaredField.set(target, mockList);
+          Object listObj =
+              processGenericList(target, declaredField, actualTypeArgument, mockList, argument);
+          if (actualTypeArgument instanceof Class) {
+            listObj = generateWrapperUsingPrimitive(actualTypeArgument);
+            if (listObj != null) {
               continue;
             }
-          }
-
-          if (actualTypeArgument instanceof Class) {
             listObj = ((Class) actualTypeArgument).newInstance();
             mockList.add(listObj);
             recursive(listObj, actualTypeArgument, null);
@@ -138,58 +158,14 @@ public class Mocker {
         Type varType = ((ParameterizedType) targetType).getActualTypeArguments()[0];
         if (varType instanceof ParameterizedType) {
           Type rawType = ((ParameterizedType) varType).getRawType();
-
-          // start
           List mockList = new ArrayList();
           if (rawType == List.class) {
             Type actualTypeArgument =
                 ((ParameterizedTypeImpl) argument).getActualTypeArguments()[0];
-            Object listObj;
-
-            // List<Integer> List<String>
-            listObj = genObj(actualTypeArgument);
-            if (listObj != null) {
-              mockList.add(listObj);
-              declaredField.set(target, mockList);
-              continue;
-            }
-
-            // List<List<String>>
-            if (actualTypeArgument instanceof ParameterizedType) {
-              Type actualTypeArgument1 =
-                  ((ParameterizedTypeImpl) fieldGenericType).getActualTypeArguments()[0];
-              listObj = new ArrayList<>();
-              recursive(listObj, fieldGenericType, actualTypeArgument1);
-              mockList.add(listObj);
-              declaredField.set(target, mockList);
-            }
-
-            // List<T>
-            if (actualTypeArgument instanceof TypeVariable) {
-              if (argument instanceof Class) {
-                listObj = generateWrapperUsingPrimitive(argument);
-                if (listObj == null) {
-                  listObj = ((Class<?>) argument).newInstance();
-                  mockList.add(listObj);
-                  recursive(listObj, argument, null);
-
-                }
-                mockList.add(listObj);
-                declaredField.set(target, mockList);
-                continue;
-              }
-            }
-
-            if (actualTypeArgument instanceof Class) {
-              listObj = ((Class) actualTypeArgument).newInstance();
-              mockList.add(listObj);
-              recursive(listObj, actualTypeArgument, null);
-            }
-            declaredField.set(target, mockList);
+            Object listObj =
+                processGenericList(target, declaredField, actualTypeArgument, mockList, argument);
             continue;
           }
-
-          // end
 
           if (rawType instanceof Class) {
             obj = ((Class) rawType).newInstance();
@@ -200,7 +176,7 @@ public class Mocker {
 
         // List<?>
         if (varType instanceof WildcardType) {
-          obj = genObj(argument);
+          obj = generateWrapperUsingPrimitive(argument);
           if (obj != null) {
             declaredField.set(target, obj);
             continue;
