@@ -12,6 +12,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import static feign.hystrix.ReflectUtil.*;
 
@@ -55,6 +56,40 @@ public class Mocker {
 
     // List<T>
     if (actualTypeArgument instanceof TypeVariable) {
+      // new
+      if (fieldGenericType instanceof ParameterizedType) {
+        Object obj = generateWrapperUsingPrimitive(argument);
+        if (obj != null) {
+          mockList.add(obj);
+          declaredField.set(target, mockList);
+          return obj;
+        }
+        if (argument instanceof Class) {
+          listObj = generateWrapperUsingPrimitive(argument);
+          if (listObj == null) {
+            listObj = ((Class<?>) argument).newInstance();
+            mockList.add(listObj);
+            recursive(listObj, argument, null);
+          }
+          return listObj;
+        }
+        Type rawType = ((ParameterizedType) argument).getRawType();
+        if (rawType == List.class) {
+          listObj = new ArrayList<>();
+          processRecursiveList(listObj, argument);
+          mockList.add(listObj);
+        }
+        // if (rawType instanceof Class) {
+        // listObj = ((Class) rawType).newInstance();
+        // mockList.add(listObj);
+        // recursive(listObj, argument, ((ParameterizedTypeImpl)
+        // argument).getActualTypeArguments()[0]);
+        // }
+        declaredField.set(target, mockList);
+        return listObj;
+      }
+      // end
+
       if (argument instanceof Class) {
         listObj = generateWrapperUsingPrimitive(argument);
         if (listObj == null) {
@@ -88,7 +123,17 @@ public class Mocker {
         if (rawType instanceof Class) {
           Type argument;
           Mock annotation = method.getAnnotation(Mock.class);
-          Class<?> type = annotation.type();
+          Class<?> type = annotation.generic();
+          Mapping[] values = annotation.mappings();
+          for (Mapping value : values) {
+            if (ReflectUtil.fieldMap.keySet().contains(value.type())) {
+              ReflectUtil.fieldMap.get(value.type()).put(value.name(), value.value());
+            } else {
+              HashMap<String, String> map = new HashMap<>();
+              map.put(value.name(), value.value());
+              ReflectUtil.fieldMap.put(value.type(), map);
+            }
+          }
           if (type != void.class && type != Void.class) {
             argument = type;
           } else {
@@ -109,7 +154,38 @@ public class Mocker {
     }
   }
 
+  private void processRecursiveList(Object target, Type argument) throws Exception {
+    Object listObj = generateWrapperUsingPrimitive(argument);
+    if (listObj != null) {
+      ((List<Object>) target).add(listObj);
+      return;
+    }
+    if (argument instanceof Class) {
+      listObj = ((Class<?>) argument).newInstance();
+      recursive(listObj, argument, null);
+    }
+    if (listObj != null) {
+      ((List<Object>) target).add(listObj);
+      return;
+    } else {
+      if (argument instanceof ParameterizedType) {
+        listObj = new ArrayList<>();
+        recursive(listObj, argument, ((ParameterizedType) argument).getActualTypeArguments()[0]);
+        ((List<Object>) target).add(listObj);
+      }
+    }
+
+  }
+
   public void recursive(Object target, Type targetType, Type argument) throws Exception {
+
+    // start
+    if (target instanceof List) {
+      processRecursiveList(target, argument);
+      return;
+    }
+    // end
+
     Field[] declaredFields = target.getClass().getDeclaredFields();
     for (Field declaredField : declaredFields) {
       if (Modifier.isFinal(declaredField.getModifiers())) {
