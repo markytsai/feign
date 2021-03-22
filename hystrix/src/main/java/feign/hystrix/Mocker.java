@@ -1,5 +1,6 @@
 package feign.hystrix;
 
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
@@ -26,6 +27,24 @@ import static feign.hystrix.ReflectUtil.*;
 public class Mocker {
 
   Logger log = LoggerFactory.getLogger(Mocker.class);
+  private List<Class<?>> mightRecursiveClasses = Lists.newArrayList();
+
+  private boolean isJavaClass(Class<?> clz) {
+    return clz != null && clz.getClassLoader() == null;
+  }
+
+  private boolean checkHasCircularDependency(Field field) {
+    if (isJavaClass(field.getType())) {
+      return false;
+    }
+    if (mightRecursiveClasses.contains(field.getType())) {
+      throw new MockException(field.getDeclaringClass().getCanonicalName()
+          + " has circular dependencies. "
+          + "Probably refer to field " + field.getName() + "?");
+    }
+    mightRecursiveClasses.add(field.getType());
+    return false;
+  }
 
   public Object processGenericList(Object target,
                                    Field declaredField,
@@ -188,6 +207,7 @@ public class Mocker {
 
     Field[] declaredFields = target.getClass().getDeclaredFields();
     for (Field declaredField : declaredFields) {
+      checkHasCircularDependency(declaredField);
       if (Modifier.isFinal(declaredField.getModifiers())) {
         continue;
       }
@@ -274,6 +294,7 @@ public class Mocker {
           declaredField.set(target, obj);
         }
       }
+      mightRecursiveClasses.remove(declaredField.getType());
     }
   }
 }
