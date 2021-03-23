@@ -1,6 +1,7 @@
 package feign.hystrix.custome;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.hystrix.HystrixFeign;
@@ -14,6 +15,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,11 +38,11 @@ public class HystrixCustomTest {
   public void costumedFallbackTest() throws Exception {
     Contributor successfulContributor = new Contributor();
     server.enqueue(
-        new MockResponse().setResponseCode(100).setBody(new Gson().toJson(successfulContributor)));
+            new MockResponse().setResponseCode(100).setBody(new Gson().toJson(successfulContributor)));
     server.enqueue(
-        new MockResponse().setResponseCode(100).setBody(new Gson().toJson(successfulContributor)));
+            new MockResponse().setResponseCode(100).setBody(new Gson().toJson(successfulContributor)));
     server.enqueue(
-        new MockResponse().setResponseCode(100).setBody(new Gson().toJson(successfulContributor)));
+            new MockResponse().setResponseCode(100).setBody(new Gson().toJson(successfulContributor)));
 
     ContributorApi fallback = new ContributorApi() {
       @Override
@@ -65,29 +67,27 @@ public class HystrixCustomTest {
     //
     // RestResponse<?> c1 = api.singleContributor("Netflix", "feign");
     // System.out.println(c1);
-    RiskMicroClient riskFallback = new RiskMicroClient() {
-      @Override
-      public RestResponse<RestPage<ComplaintHandlerMicroResponse>> queryComplaintHandlerList() {
-        List<ComplaintHandlerMicroResponse> responses =
-            Arrays.asList(new ComplaintHandlerMicroResponse());
-        RestPage restPage = new RestPage(responses);
-        return new RestResponse<>("this is fallback", restPage);
-      }
+    RiskMicroClient riskFallback = () -> {
+      List<ComplaintHandlerMicroResponse> responses =
+              Arrays.asList(new ComplaintHandlerMicroResponse());
+      RestPage restPage = new RestPage(responses);
+      return new RestResponse<>("this is fallback", restPage);
     };
     RiskMicroClient client =
-        target(RiskMicroClient.class, "http://localhost:" + server.getPort(), riskFallback);
+            target(RiskMicroClient.class, "http://localhost:" + server.getPort(), riskFallback);
     RestResponse<RestPage<ComplaintHandlerMicroResponse>> restPageRestResponse =
-        client.queryComplaintHandlerList();
-    System.out.println(restPageRestResponse);
+            client.queryComplaintHandlerList();
+    Gson niceGson = new GsonBuilder().setPrettyPrinting().create();
+    System.out.println(niceGson.toJson(restPageRestResponse));
 
 
   }
 
   protected <E> E target(Class<E> api, String url, E fallback) {
     return HystrixFeign.builder()
-        .decoder(new GsonDecoder())
-        .encoder(new GsonEncoder())
-        .target(api, url, fallback);
+            .decoder(new GsonDecoder())
+            .encoder(new GsonEncoder())
+            .target(api, url, fallback);
   }
 
 }

@@ -1,6 +1,7 @@
 package feign.hystrix.custome.entity;
 
 import feign.RequestLine;
+import feign.hystrix.Mapping;
 import feign.hystrix.Mock;
 
 /**
@@ -11,7 +12,12 @@ import feign.hystrix.Mock;
  */
 public interface RiskMicroClient {
 
-  @Mock
+  @Mock(
+          mappings = {
+                  @Mapping(type = RestResponse.class, name = "code", value = "200"),
+                  @Mapping(type = RestResponse.class, name = "msg", value = "success")
+          }
+  )
   @RequestLine("GET /test")
   RestResponse<RestPage<ComplaintHandlerMicroResponse>> queryComplaintHandlerList();
 
