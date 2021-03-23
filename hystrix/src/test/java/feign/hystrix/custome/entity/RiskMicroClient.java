@@ -14,8 +14,9 @@ public interface RiskMicroClient {
 
   @Mock(
           mappings = {
-                  @Mapping(type = RestResponse.class, name = "code", value = "200"),
-                  @Mapping(type = RestResponse.class, name = "msg", value = "success")
+//                  @Mapping(type = RestResponse.class, name = "code", value = "200"),
+//                  @Mapping(type = RestResponse.class, name = "msg", value = "success"),
+                  @Mapping(type = ComplaintHandlerMicroResponse.class, name = "workNo", value = "123456789")
           }
   )
   @RequestLine("GET /test")
